@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel an in-flight run when new commits land on the same branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # The whole point of the matrix: prove pixi.lock actually resolves on a
+        # student's Windows laptop *natively*, with no WSL, before they find out
+        # in week one. macOS covers both Apple Silicon and the Intel holdouts.
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pixi
+        uses: prefix-dev/setup-pixi@v0.10.1
+        with:
+          # Fail if pixi.lock is out of date with pixi.toml, rather than
+          # silently re-solving. A stale lockfile is the bug we are preventing.
+          locked: true
+          cache: true
+
+      - name: Lint
+        run: pixi run lint
+
+      - name: Tests
+        run: pixi run test

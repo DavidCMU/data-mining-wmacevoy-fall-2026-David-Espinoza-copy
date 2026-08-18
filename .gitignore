@@ -1,3 +1,30 @@
+# --- pixi ---------------------------------------------------------------
+# The solved environments. Recreated from pixi.lock by `pixi install`.
+# NOTE: pixi.lock itself IS committed -- it is what makes every machine match.
+.pixi/
+
+# --- derived data -------------------------------------------------------
+# Cached USGS Parquet and debug snapshots. Regenerated on demand.
+*/data/
+*/debug/
+
+# --- Streamlit ----------------------------------------------------------
+# colorado_river/.streamlit/config.toml is tracked on purpose (see that file).
+# Only the per-user credential file, written by the onboarding prompt, is not.
+.streamlit/credentials.toml
+
+# --- Python -------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# --- OS / editor --------------------------------------------------------
+.DS_Store
+*~
+.#*
+
+# --- GitHub's standard Python template (kept for completeness) --------
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

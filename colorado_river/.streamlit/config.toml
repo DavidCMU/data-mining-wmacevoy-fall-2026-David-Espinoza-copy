@@ -1,0 +1,27 @@
+# Streamlit project configuration — committed on purpose.
+#
+# This file is why nobody gets prompted for an email address on first run.
+#
+# By default Streamlit runs an interactive "Welcome to Streamlit!" onboarding
+# step that asks for an email and writes ~/.streamlit/credentials.toml in the
+# student's HOME directory. That prompt blocks the terminal, it is per-user
+# rather than per-project, and it does not survive a fresh machine or a CI
+# runner -- which is exactly the kind of hidden, unversioned state that makes
+# "works on my laptop" happen.
+#
+# headless = true skips the onboarding step entirely. The tradeoff is that
+# Streamlit no longer auto-opens a browser tab; it prints a local URL instead
+# and you click that. This is the same setting used in every Streamlit
+# container image, and it is what makes `pixi run test` work in CI.
+
+[server]
+headless = true
+
+[browser]
+# Opt out of Streamlit's usage telemetry. Student work should not phone home.
+gatherUsageStats = false
+
+[runner]
+# Show Python warnings in the app rather than swallowing them, so students see
+# pandas deprecation notices while they still have time to fix them.
+fastReruns = true

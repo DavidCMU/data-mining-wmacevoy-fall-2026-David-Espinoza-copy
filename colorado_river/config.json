@@ -1,0 +1,8 @@
+{
+  "usgs_sources": {
+    "Colorado River near Cameo (09095500)": "09095500",
+    "Gunnison River near Grand Junction (09152500)": "09152500",
+    "Colorado River at CO–UT State Line (09163500)": "09163500"
+  },
+  "debug": false
+}

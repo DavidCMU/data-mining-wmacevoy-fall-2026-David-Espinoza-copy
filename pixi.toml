@@ -1,0 +1,82 @@
+# =============================================================================
+# Data Mining — Fall 2026
+#
+# ONE manifest for the whole course. Read this file top-to-bottom:
+#
+#   [dependencies]        the shared baseline every project inherits
+#   [feature.<name>]      one project's extra packages and its tasks
+#   [environments]        which features combine into a runnable environment
+#
+# Adding a project means adding a [feature.<name>.*] block and one line under
+# [environments]. Nothing is copied between projects, so nothing can drift.
+#
+# Students never edit this file. They run `pixi install`, then `pixi run <task>`.
+# =============================================================================
+
+[workspace]
+name = "data-mining-wmacevoy-fall-2026"
+version = "2026.8.0"
+description = "Course projects for Data Mining, Colorado Mesa University, Fall 2026"
+authors = ["Warren MacEvoy <wmacevoy@gmail.com>"]
+channels = ["conda-forge"]
+
+# Every platform a student might bring to class. `pixi.lock` stores a solved,
+# pinned package set for each one, so macOS/Windows/Linux all get the same
+# versions. win-64 is native Windows -- no WSL required for these projects.
+platforms = ["osx-arm64", "osx-64", "linux-64", "win-64"]
+
+# -----------------------------------------------------------------------------
+# Shared baseline. Every environment below inherits these automatically.
+# Keep this list small: only things genuinely common to all course projects.
+# -----------------------------------------------------------------------------
+[dependencies]
+python = "3.12.*"
+pandas = ">=2.2,<3"
+numpy = ">=1.26,<3"
+pyarrow = ">=16"
+python-dateutil = ">=2.9"
+pytz = ">=2024.1"
+
+# -----------------------------------------------------------------------------
+# Developer tooling, shared by every project.
+# -----------------------------------------------------------------------------
+[feature.dev.dependencies]
+pytest = ">=8"
+ruff = ">=0.6"
+
+# -----------------------------------------------------------------------------
+# Project: colorado_river
+#
+# A Streamlit dashboard over the USGS Water Services API. Deltas from the
+# baseline are just the web/plotting/HTTP stack.
+# -----------------------------------------------------------------------------
+[feature.colorado-river.dependencies]
+streamlit = ">=1.37"
+altair = ">=5.3"
+httpx = ">=0.27"
+matplotlib = ">=3.8"
+watchdog = ">=4"          # lets Streamlit hot-reload on file save
+
+[feature.colorado-river.tasks]
+# `cwd` is relative to this manifest, so every task behaves the same no matter
+# which directory the student happens to be sitting in.
+app = { cmd = "streamlit run app.py", cwd = "colorado_river" }
+px = { cmd = "python px.py", cwd = "colorado_river" }
+meta = { cmd = "python meta.py", cwd = "colorado_river" }
+test = { cmd = "pytest -q", cwd = "colorado_river" }
+lint = { cmd = "ruff check .", cwd = "colorado_river" }
+
+# Clear the cached Parquet + debug snapshots. Replaces `./setup.sh --reset`.
+# `pixi clean` handles the environment itself, so this only touches data.
+clean = { cmd = "python -c \"import shutil,pathlib; [shutil.rmtree(p, ignore_errors=True) for p in (pathlib.Path('data'), pathlib.Path('debug'))]; print('cleared data/ and debug/')\"", cwd = "colorado_river" }
+
+# -----------------------------------------------------------------------------
+# Environments. `default` is what `pixi install` and a bare `pixi run` use.
+#
+# When the second project lands, add a sibling line, e.g.
+#     houses = ["houses", "dev"]
+# and students select it with `pixi run -e houses <task>`.
+# -----------------------------------------------------------------------------
+[environments]
+default = ["colorado-river", "dev"]
+colorado-river = ["colorado-river", "dev"]

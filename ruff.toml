@@ -1,0 +1,40 @@
+# Lint rules for the whole course, chosen explicitly.
+#
+# Ruff's *default* rule set changes between releases -- 0.16 lints far more than
+# 0.6 did. Inheriting defaults means a routine tool upgrade can turn a green
+# build red without anyone changing a line of code. So we name the rules we
+# want. (This is the same reasoning as committing pixi.lock.)
+#
+# The goal here is a gate that catches real defects, not a style argument.
+# Anything a student has to argue with is a rule that teaches them to ignore CI.
+
+line-length = 100
+target-version = "py312"
+
+[lint]
+select = [
+  "F",   # pyflakes: undefined names, unused imports, broken f-strings -- real bugs
+  "E4",  # import placement
+  "E7",  # statement-level mistakes (comparisons to None/True, bare semicolons)
+  "E9",  # syntax and IO errors
+  "I",   # import ordering (auto-fixable with `pixi run lint --fix`)
+  "W",   # trailing whitespace and friends
+]
+
+# Deliberately NOT enabled, and why:
+#
+#   UP    Rewrites typing.Dict -> dict, Optional[x] -> x | None. Correct, but it
+#         is churn, and the older spellings are what students will meet in the
+#         wild for years yet.
+#
+#   BLE   Flags `except Exception:`. There are 17 of these in colorado_river and
+#         they ARE a real problem -- silent failure is the opposite of the
+#         reliability we want to teach. But that is a lesson and a refactor, not
+#         a lint gate. See the "Known rough edges" section of the project README.
+#
+#   DTZ   Flags naive datetime.now(). Also a genuine issue in a timezone-heavy
+#         app, and also better taught than enforced.
+
+[lint.isort]
+# Treat the project modules as first-party so they sort into their own block.
+known-first-party = ["usgs", "eda", "px", "meta", "app"]
