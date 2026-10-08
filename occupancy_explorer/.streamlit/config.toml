@@ -1,0 +1,14 @@
+# Streamlit project configuration, committed on purpose (see ../colorado_river/.streamlit/config.toml
+# for the full story). headless skips the first-run email prompt; no usage telemetry.
+# The API key goes in secrets.toml next to this file, which is git-ignored.
+
+[server]
+headless = true
+# Only this machine: the GraphQL tab runs queries with your API key.
+address = "localhost"
+
+[browser]
+gatherUsageStats = false
+
+[runner]
+fastReruns = true

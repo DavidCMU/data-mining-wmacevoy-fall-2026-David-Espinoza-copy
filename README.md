@@ -89,6 +89,12 @@ pixi run px       # Parquet explorer (CLI)
 pixi run clean    # delete cached data and debug snapshots
 ```
 
+Other projects have their own environment, selected with `-e`:
+
+```bash
+pixi run -e occupancy app    # occupancy explorer (see occupancy_explorer/README.md)
+```
+
 To see everything available:
 
 ```bash
