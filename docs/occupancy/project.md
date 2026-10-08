@@ -4,7 +4,7 @@ title: Occupancy — student project
 
 # Student project: build the occupancy data source
 
-[Course home](../) · [Overview](./) · **Student project**
+[Course home](../) · [Overview](./) · **Student project** · [GraphQL tutorial](graphql.html)
 
 You will build the four components from the [overview](./) in your own AWS account, in the order data flows through them, then use what you built to answer a question about a real room. You will build each one with **Claude Code**, from a written spec. The goal is not that you type less. The goal is that you learn to say exactly what you want, and then check that you got it.
 
@@ -192,6 +192,8 @@ in as the read-only occupancy_reader role. Include limits (page size, query dept
 mutations are made impossible, and an example Python client that pages through all events
 for a location and writes Parquet. Don't write code.
 ```
+
+New to GraphQL? Work through the [GraphQL tutorial](graphql.html) against the course API first, so you know what you're asking Claude to build.
 
 Compare with the reference spec, then **Plan → Build → Verify**. Ask for a local version first:
 

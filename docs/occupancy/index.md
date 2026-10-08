@@ -4,7 +4,7 @@ title: Occupancy — overview
 
 # Occupancy: a data source you build yourself
 
-[Course home](../) · **Overview** · [Student project](project.html)
+[Course home](../) · **Overview** · [Student project](project.html) · [GraphQL tutorial](graphql.html)
 
 Most datasets in this course arrive finished. This one you build. A sensor over a doorway counts people walking in and out, a small cloud service keeps the record, and you pull the data out to analyse it. Building it yourself lets you see every place a number can go quietly wrong: a sensor that misses people, a clock that is off by a day, a retry that counts someone twice. Those are the same failures you will have to find, without the source code, in every dataset someone hands you later.
 
