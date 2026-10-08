@@ -218,8 +218,12 @@ with tab_loc:
                 ).properties(height=220),
                 width="stretch")
             bad = int((drift["net"] != 0).sum())
-            st.caption(f"{bad} of {len(drift)} days don't net to zero. A room that empties at "
-                       "night should, so each red bar is a counting error.")
+            why = ("This is simulated: stays are random with a long tail, so some visitors are still "
+                   "inside at midnight. Real rooms that empty at night shouldn't do this."
+                   if is_synthetic(location) else
+                   "A room that empties at night should net to zero, so each red bar is either "
+                   "someone still inside at midnight or a counting error. Check which.")
+            st.caption(f"{bad} of {len(drift)} days don't net to zero. {why}")
 
     st.markdown("**Upload lag: seconds from event to server**")
     if lag.empty:
