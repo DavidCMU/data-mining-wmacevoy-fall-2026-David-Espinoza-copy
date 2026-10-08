@@ -205,6 +205,7 @@ Before anything touches AWS, get this running against a local PostgreSQL with se
 - [ ] A mutation is rejected, and the schema has no `Mutation` type.
 - [ ] `pixi run pull` fetches more than 5,000 events with no gaps or repeats (check `id`).
 - [ ] The count from GraphQL matches `GET /occupancy/{location}` from Part 1.
+- [ ] The explorer (`pixi run -e occupancy app` in the course repository, with `graphql_url` in its `config.json` pointed at *your* API) shows your mock locations, and its *Count now* matches too.
 
 **Think about it:** why read through a separate role and API at all, instead of letting analysts connect to the database directly?
 
@@ -278,7 +279,7 @@ Then on the Pi: `i2cdetect -y 1` should show `69`. Run `bash install.sh`, set `l
 **Goal:** a claim about a real room that you would be willing to act on, with the sensor's error measured rather than assumed.
 
 1. **Collect ground truth.** For at least two one-hour sessions, someone sits by the door and clicks Enter/Leave on the mock page under `truth-<room>` while the Pi records `<room>`.
-2. **Pull both** with the source-graphql client into Parquet.
+2. **Pull both** with the source-graphql client into Parquet. Look at them in the explorer first: the *Daily drift* and *Upload lag* charts often show what went wrong before any analysis does.
 3. Analyse in a notebook or script in `analysis/`:
 
 ```text

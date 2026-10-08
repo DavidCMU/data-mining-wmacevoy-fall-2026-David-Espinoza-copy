@@ -18,11 +18,12 @@ Each component is named for the job it does with the data:
 | **ingress-pi** | writes data in | A Raspberry Pi 4 with a thermal camera (Grid-EYE) over a real doorway. It keeps everything in SQLite and uploads on a cron job. |
 | **state-aws** | system of record | A REST API on AWS Lambda with PostgreSQL (RDS) behind it. Insert-only, so history is never rewritten. |
 | **source-graphql** | reads data out | A read-only GraphQL API over the same database, plus a script that pulls events into Parquet for pandas. |
+| **occupancy_explorer** | looks at it | A Streamlit dashboard in the course repository. It keeps a local Parquet copy of every event, synced from source-graphql, and charts each room: occupancy over time, a typical week, days whose count doesn't add up, and upload delays. It has a tab for running your own GraphQL queries. |
 
 ```
  ingress-mock ──┐
   (simulated)   │   POST /enter|leave/{location}/{ts}?id={event_id}
-                ├──────────────────────────────────────────────────▶ state-aws ──▶ source-graphql ──▶ your notebook
+                ├──────────────────────────────────────────────────▶ state-aws ──▶ source-graphql ──▶ explorer / notebook
  ingress-pi  ───┘          the contract every ingress follows          (RDS)        (read-only)
   (real sensor)
 ```
@@ -60,6 +61,16 @@ These are features of the project, not bugs to hide:
 2. **Synthetic vs real.** Mock locations start with `mock-`. Mixing them up is the classic way a model ends up learning from fake data.
 3. **Ground truth is expensive.** To know how wrong the Pi is, someone has to count by hand. Have them click Enter and Leave on the mock page under a `truth-<room>` location while the Pi records `<room>`, then compare the two.
 4. **Duplicates and retries.** The record key makes resending harmless, but only if every sender keeps its ids stable. Change the id scheme and the same visit is counted twice.
+
+## Looking at the data
+
+From the course repository root:
+
+```bash
+pixi run -e occupancy app
+```
+
+You need the read API key (ask your instructor, or see the explorer's README if you deployed your own). The explorer marks `mock-` locations, shows a count that goes below zero as missed entries, and shows each day whose entries and exits don't cancel out. Those are the problems listed above, made visible. See [`occupancy_explorer/README.md`](https://github.com/wmacevoy/data-mining-wmacevoy-fall-2026/blob/data-science-principles/occupancy_explorer/README.md).
 
 ## Cost
 
