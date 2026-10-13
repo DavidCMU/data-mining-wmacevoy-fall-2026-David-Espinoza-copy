@@ -12,6 +12,8 @@ What this app does:
 The pipeline in one line: mnist_data (download, split, standardize) ->
 model (cnn | mlp) -> train (writes runs/<id>/) -> this app (reads runs/<id>/).
 """
+import shutil
+
 import altair as alt
 import numpy as np
 import pandas as pd
@@ -266,6 +268,37 @@ with tab_test:
             for col, i in zip(st.columns(8), row):
                 col.image(x_te[i], width=56)
                 col.caption(f"said **{pred[i]}** ({probs[i].max():.0%}), is {y[i]}")
+
+        st.subheader("Export")
+        st.caption("ONNX is a framework-neutral model file: this run's best checkpoint, with "
+                   "standardization and softmax built in, runnable without Python or PyTorch. "
+                   "The export is checked against PyTorch on 256 test images.")
+        onnx_path = run_dir / "model.onnx"
+        if st.button("Export to ONNX", type="primary"):
+            # Pulls in torch and onnx, so load it only when asked.
+            import export_onnx
+
+            with st.spinner("Exporting…"):
+                try:
+                    info = export_onnx.export(run_dir)
+                    st.session_state["onnx_info"] = (run_dir.name, info)
+                except Exception as e:     # show any exporter failure, don't crash the page
+                    st.error(f"Export failed: {type(e).__name__}: {e}")
+        info = st.session_state.get("onnx_info")
+        if info and info[0] == run_dir.name:
+            st.success(f"Exported {info[1]['bytes'] / 1024:,.0f} KB. Largest difference from "
+                       f"PyTorch: {info[1]['max_diff']:.1e}.")
+        if onnx_path.exists():
+            a, b = st.columns(2)
+            a.download_button("Download model.onnx", onnx_path.read_bytes(),
+                              file_name=f"mnist-{run_dir.name}.onnx",
+                              mime="application/octet-stream")
+            if b.button("Use in the web app"):
+                web_model = runs.HERE / "web" / "model.onnx"
+                shutil.copyfile(onnx_path, web_model)
+                b.success("Copied to web/model.onnx.")
+            st.caption("Then `pixi run -e ml web` and open http://localhost:8000 to draw digits "
+                       "for it.")
 
 with tab_compare:
     rows = []

@@ -104,11 +104,16 @@ pytorch = ">=2.3"
 streamlit = ">=1.63"      # see the pyarrow note under occupancy
 altair = ">=5.3"
 watchdog = ">=4"
+onnx = ">=1.16"           # torch.onnx.export writes this format
+onnxscript = ">=0.2"      # ... and needs this to do it (the dynamo exporter)
+onnxruntime = ">=1.18"    # runs the exported file, to check it matches PyTorch
 
 [feature.ml.tasks]
 app = { cmd = "streamlit run app.py", cwd = "ml" }
 data = { cmd = "python mnist_data.py", cwd = "ml" }
 train = { cmd = "python train.py", cwd = "ml" }
+export = { cmd = "python export_onnx.py", cwd = "ml" }
+web = { cmd = "python -m http.server 8000 --directory web", cwd = "ml" }
 test = { cmd = "pytest -q", cwd = "ml" }
 lint = { cmd = "ruff check .", cwd = "ml" }
 clean = { cmd = "python -c \"import shutil; [shutil.rmtree(p, ignore_errors=True) for p in ('data', 'runs')]; print('cleared data/ and runs/')\"", cwd = "ml" }

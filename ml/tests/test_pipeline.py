@@ -116,3 +116,20 @@ def test_montage_tiles_and_scales():
     sheet = runs.montage(np.random.default_rng(0).normal(size=(5, 3, 3)), cols=4, scale=2)
     assert sheet.shape == ((2 * 4 + 1) * 2, (4 * 4 + 1) * 2) and sheet.dtype == np.uint8
     assert runs.montage(np.zeros((1, 3, 3)), cols=1).max() <= 255      # flat tile: no NaN
+
+
+def test_onnx_export_matches_pytorch(tmp_path, fake_mnist):
+    import onnxruntime as ort
+
+    import export_onnx
+
+    run_dir = train.train(train.parse_args(["--epochs", "1", "--val-size", "100",
+                                            "--run-dir", str(tmp_path / "r")]))
+    info = export_onnx.export(run_dir)
+    assert info["max_diff"] < export_onnx.TOLERANCE and info["arch"] == "cnn"
+
+    # Raw [0, 1] pixels in, probabilities out, any batch size.
+    session = ort.InferenceSession(info["path"], providers=["CPUExecutionProvider"])
+    probs = session.run(["probs"], {"pixels": np.random.rand(5, 1, 28, 28).astype(np.float32)})[0]
+    assert probs.shape == (5, 10)
+    assert np.allclose(probs.sum(1), 1, atol=1e-5)
