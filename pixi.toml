@@ -92,6 +92,28 @@ lint = { cmd = "ruff check .", cwd = "occupancy_explorer" }
 clean = { cmd = "python -c \"import shutil; shutil.rmtree('data', ignore_errors=True); print('cleared data/')\"", cwd = "occupancy_explorer" }
 
 # -----------------------------------------------------------------------------
+# Project: ml
+#
+# An MNIST pipeline: download -> train a small PyTorch network -> watch it learn
+# in Streamlit. Training runs as its own process and writes runs/<id>/, so the
+# dashboard can be reloaded (or closed) without killing a run.
+# Run with `pixi run -e ml <task>`.
+# -----------------------------------------------------------------------------
+[feature.ml.dependencies]
+pytorch = ">=2.3"
+streamlit = ">=1.63"      # see the pyarrow note under occupancy
+altair = ">=5.3"
+watchdog = ">=4"
+
+[feature.ml.tasks]
+app = { cmd = "streamlit run app.py", cwd = "ml" }
+data = { cmd = "python mnist_data.py", cwd = "ml" }
+train = { cmd = "python train.py", cwd = "ml" }
+test = { cmd = "pytest -q", cwd = "ml" }
+lint = { cmd = "ruff check .", cwd = "ml" }
+clean = { cmd = "python -c \"import shutil; [shutil.rmtree(p, ignore_errors=True) for p in ('data', 'runs')]; print('cleared data/ and runs/')\"", cwd = "ml" }
+
+# -----------------------------------------------------------------------------
 # Environments. `default` is what `pixi install` and a bare `pixi run` use.
 #
 # When the second project lands, add a sibling line, e.g.
@@ -102,3 +124,4 @@ clean = { cmd = "python -c \"import shutil; shutil.rmtree('data', ignore_errors=
 default = ["colorado-river", "dev"]
 colorado-river = ["colorado-river", "dev"]
 occupancy = ["occupancy", "dev"]
+ml = ["ml", "dev"]
