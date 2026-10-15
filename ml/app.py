@@ -49,18 +49,39 @@ def test_images() -> np.ndarray:
 # ========== Sidebar: start a run ==========
 with st.sidebar:
     st.header("New run")
+    st.caption("Pick settings and start training. Hover the ? on each one for what it does.")
     with st.form("new_run"):
         arch = st.radio("Network", ["cnn", "mlp"], horizontal=True,
-                        help="cnn: two conv layers. mlp: fully connected, no convolutions.")
-        epochs = st.slider("Epochs", 1, 20, 5)
-        optimizer = st.radio("Optimizer", ["adam", "sgd"], horizontal=True)
+                        help="cnn: two conv layers that look at small patches of the image, then a "
+                             "classifier. mlp: fully connected, every pixel wired to every "
+                             "neuron, no convolutions. The cnn usually wins on images.")
+        epochs = st.slider("Epochs", 1, 20, 5,
+                           help="How many full passes over the training images. More epochs "
+                                "learn more, until validation accuracy stops improving and "
+                                "the model starts memorizing (overfitting).")
+        optimizer = st.radio("Optimizer", ["adam", "sgd"], horizontal=True,
+                             help="How the weights are updated from each batch's gradient. "
+                                  "adam: adapts the step size per weight, forgiving of the "
+                                  "learning rate. sgd: plain gradient descent with momentum "
+                                  "0.9, usually wants a larger learning rate.")
         lr = st.select_slider("Learning rate", [1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2, 1e-1],
-                              value=1e-3, format_func=lambda v: f"{v:g}")
-        batch_size = st.select_slider("Batch size", [16, 32, 64, 128, 256, 512], value=128)
-        dropout = st.slider("Dropout", 0.0, 0.7, 0.2, 0.05)
+                              value=1e-3, format_func=lambda v: f"{v:g}",
+                              help="How big a step each update takes. Too small learns "
+                                   "slowly; too large makes the loss jump around or blow up. "
+                                   "Try 0.001 for adam, 0.01-0.1 for sgd.")
+        batch_size = st.select_slider("Batch size", [16, 32, 64, 128, 256, 512], value=128,
+                                      help="Images per weight update. Small batches give more, "
+                                           "noisier updates per epoch; large batches give fewer, "
+                                           "smoother ones and run faster per image.")
+        dropout = st.slider("Dropout", 0.0, 0.7, 0.2, 0.05,
+                            help="Fraction of hidden neurons randomly switched off on each "
+                                 "training batch, so the network can't lean on any one of "
+                                 "them. Fights overfitting; 0 turns it off. Off at test time.")
         train_size = st.select_slider(
             "Training images", [1000, 5000, 10000, 25000, 55000], value=55000,
-            help="Fewer images train faster and make overfitting easy to see.")
+            help="How many of the 55,000 training images to use (the other 5,000 are "
+                 "held out for validation). Fewer images train faster and make "
+                 "overfitting easy to see.")
         if st.form_submit_button("Start training", type="primary"):
             new = runs.start({
                 "arch": arch, "epochs": epochs, "optimizer": optimizer, "lr": lr,
@@ -68,6 +89,7 @@ with st.sidebar:
                 "train_size": 0 if train_size == 55000 else train_size,
             })
             st.session_state["run"] = new.name
+    st.caption("Training runs in the background; it shows up under Runs below.")
 
     all_runs = runs.list_runs()
     if not all_runs:
@@ -75,6 +97,9 @@ with st.sidebar:
         st.stop()
 
     st.header("Runs")
+    st.caption("Every run, newest first: its id, its state (running, done, stopped, "
+               "failed, or lost if it stopped reporting), and its test accuracy once "
+               "finished. Pick one to view it on the right.")
     names = [p.name for p in all_runs]
     if st.session_state.get("run") not in names:
         st.session_state["run"] = names[0]
