@@ -94,6 +94,19 @@ def stop(run_dir: Path) -> None:
     (run_dir / "STOP").touch()
 
 
+def seven_scores(y: np.ndarray, pred: np.ndarray, crossed: np.ndarray) -> dict:
+    """How a run does on crossed and plain 7s, and how often it says 7 wrongly."""
+    seven = y == 7
+    return {
+        "n_crossed": int((seven & crossed).sum()),
+        "n_plain": int((seven & ~crossed).sum()),
+        "crossed_acc": float((pred[seven & crossed] == 7).mean()),
+        "plain_acc": float((pred[seven & ~crossed] == 7).mean()),
+        "missed": int((seven & (pred != 7)).sum()),
+        "false_7": int((~seven & (pred == 7)).sum()),
+    }
+
+
 def montage(images: np.ndarray, cols: int, scale: int = 1, pad: int = 1) -> np.ndarray:
     """Tile (n, h, w) weights into one uint8 image, each tile scaled to its own range.
 

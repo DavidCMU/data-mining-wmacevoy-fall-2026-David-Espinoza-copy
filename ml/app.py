@@ -21,6 +21,7 @@ import streamlit as st
 
 import mnist_data
 import runs
+import tags
 from train import N_SAMPLES
 
 st.set_page_config(page_title="MNIST training", layout="wide")
@@ -82,14 +83,70 @@ with st.sidebar:
             help="How many of the 55,000 training images to use (the other 5,000 are "
                  "held out for validation). Fewer images train faster and make "
                  "overfitting easy to see.")
+        seven_balance = st.radio(
+            "7 balance", ["none", "oversample", "augment"], horizontal=True,
+            help="Only about 1 in 8 training 7s is crossed, and the model misses crossed 7s "
+                 "far more often. Each epoch, add crossed 7s until the 7 pool is half "
+                 "crossed. none: no correction (the baseline). oversample: repeat crossed "
+                 "7s. augment: add crossed 7s randomly shifted, rotated and scaled, so "
+                 "they are new variants, not copies. Compare in the Test tab.")
         if st.form_submit_button("Start training", type="primary"):
             new = runs.start({
                 "arch": arch, "epochs": epochs, "optimizer": optimizer, "lr": lr,
                 "batch_size": batch_size, "dropout": dropout,
                 "train_size": 0 if train_size == 55000 else train_size,
+                "seven_balance": seven_balance,
             })
             st.session_state["run"] = new.name
     st.caption("Training runs in the background; it shows up under Runs below.")
+
+    st.subheader("Experiments to try")
+    st.caption("cnn, adam, lr 0.001 unless noted. Scores are on the 10,000 test images; "
+               "only 130 of them are crossed 7s, so one image is 0.8 points there.")
+    with st.expander("7 balance: does de-biasing help crossed 7s?"):
+        st.markdown(
+            "Run **none**, **oversample** and **augment** at 16 epochs, and repeat each "
+            "with a different seed (`--seed 1`, `--seed 2`). One seed can't tell you much. "
+            "Compare them in the Test tab table.\n\n"
+            "Mean of 3 seeds, batch 128, 16 epochs:\n\n"
+            "| 7 balance | test | crossed 7s | plain 7s | 7s missed | false 7s |\n"
+            "|---|---|---|---|---|---|\n"
+            "| none | 99.22% | 96.7% | 99.4% | 9.3 | 10.7 |\n"
+            "| oversample | 99.21% | 98.5% | 99.6% | 6.0 | 11.7 |\n"
+            "| augment | 99.21% | 98.7% | 99.3% | 7.7 | 10.7 |\n\n"
+            "Both corrections roughly halve the crossed-7 mistakes (about 4 of 130 down "
+            "to 2) without moving overall accuracy. Oversampling was the steadiest. "
+            "Augment varied the most from seed to seed (3 to 12 sevens missed). False 7s "
+            "swing as much between seeds as between settings.")
+    with st.expander("Epochs: is it done learning?"):
+        st.markdown(
+            "Compare **5** and **16** epochs and watch where validation accuracy levels off. "
+            "The best checkpoint was usually epoch 12-16, so 16 is not too many.\n\n"
+            "| run | test | crossed 7s | 7s missed | false 7s |\n"
+            "|---|---|---|---|---|\n"
+            "| none, 5 epochs | 98.95% | 94.6% | 11 | 15 |\n"
+            "| none, 16 epochs | 99.18% | 97.7% | 6 | 17 |\n"
+            "| augment, 5 epochs | 98.98% | 100% | 1 | **31** |\n"
+            "| augment, 16 epochs | 99.24% | 98.5% | 12 | 6 |\n\n"
+            "Augment at 5 epochs got every 7 right by calling too many things 7: "
+            "31 other digits. Adding extra 7s biases a half-trained model toward 7; "
+            "more training sorts most of that out.")
+    with st.expander("Batch size: noise vs. speed"):
+        st.markdown(
+            "Try **32**, **128** and **512** with none and augment, 16 epochs, seed 0.\n\n"
+            "| batch | 7 balance | test | crossed 7s | 7s missed | false 7s | time |\n"
+            "|---|---|---|---|---|---|---|\n"
+            "| 32 | none | 99.20% | 91.5% | 19 | 3 | 4.4 min |\n"
+            "| 32 | augment | 99.24% | 97.7% | 14 | 7 | 3.6 min |\n"
+            "| 128 | none | 99.18% | 97.7% | 6 | 17 | 2.8 min |\n"
+            "| 128 | augment | 99.24% | 98.5% | 12 | 6 | 3.6 min |\n"
+            "| 512 | none | 99.21% | 96.9% | 13 | 8 | 3.0 min |\n"
+            "| 512 | augment | **99.28%** | 98.5% | **3** | 14 | 3.3 min |\n\n"
+            "Overall accuracy barely moves; what changes is *which* digits are wrong. "
+            "Small batches take noisier steps. Here, batch 32 with no correction peaked "
+            "at epoch 8 and missed the most crossed 7s. With augment, every batch size "
+            "kept crossed 7s at about 98%. On a CPU, batch size changes run time less "
+            "than you'd expect.")
 
     all_runs = runs.list_runs()
     if not all_runs:
@@ -203,7 +260,8 @@ def show_run() -> None:
     st.caption(
         f"{config.get('arch')} · {config.get('optimizer')} lr {config.get('lr')} · "
         f"batch {config.get('batch_size')} · dropout {config.get('dropout')} · "
-        f"{status.get('n_train', '?'):,} training images"
+        f"{status.get('n_train', '?'):,} training images · "
+        f"7 balance {config.get('seven_balance', 'none')}"
         if "n_train" in status else "starting…")
     if st_now == "failed":
         st.error(status.get("error", "failed"))
@@ -285,6 +343,35 @@ with tab_test:
                     tooltip=["digit:O", alt.Tooltip("accuracy:Q", format=".2%")],
                 ).properties(height=360, title="Accuracy by true digit"),
                 width="stretch")
+        if len(y) == 10000:            # the real test set, so the tags line up
+            st.subheader("Crossed vs plain 7s")
+            st.caption("About 1 in 8 sevens is crossed (a bar through the stem). The "
+                       "7 balance setting adds crossed 7s to training; extra 7s can also "
+                       "make the model call other digits 7, so watch false 7s too.")
+            crossed = tags.load("crossed_seven", "test", len(y))
+            s7 = runs.seven_scores(y, pred, crossed)
+            c = st.columns(4)
+            c[0].metric("Crossed 7s right", f"{s7['crossed_acc']:.2%}",
+                        help=f"of {s7['n_crossed']} crossed 7s in the test set")
+            c[1].metric("Plain 7s right", f"{s7['plain_acc']:.2%}",
+                        help=f"of {s7['n_plain']} plain 7s in the test set")
+            c[2].metric("7s missed", s7["missed"])
+            c[3].metric("False 7s", s7["false_7"], help="other digits called 7")
+            table = []
+            for p in runs.list_runs():
+                if not (p / "test.npz").exists():
+                    continue
+                t2 = np.load(p / "test.npz")
+                cfg = runs.read_json(p / "config.json", {})
+                table.append({"run": p.name, "7 balance": cfg.get("seven_balance", "none"),
+                              "test acc": runs.read_json(p / "status.json", {}).get("test_acc"),
+                              **runs.seven_scores(t2["y"], t2["pred"], crossed)})
+            st.dataframe(
+                pd.DataFrame(table).drop(columns=["n_crossed", "n_plain"]),
+                hide_index=True, width="stretch",
+                column_config={k: st.column_config.NumberColumn(format="percent")
+                               for k in ("test acc", "crossed_acc", "plain_acc")})
+
         st.subheader("Most confident mistakes")
         st.caption("Wrong, and sure of it. Some are genuinely ambiguous; some are mislabeled.")
         x_te = test_images()

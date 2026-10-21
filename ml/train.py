@@ -3,6 +3,7 @@ Train one model on MNIST and record everything to runs/<run-id>/.
 
     python train.py --arch cnn --epochs 5
     python train.py --arch mlp --lr 0.01 --optimizer sgd --train-size 10000
+    python train.py --seven-balance augment   # see sevens.py
 
 A run directory holds:
 
@@ -32,6 +33,7 @@ import torch
 from torch import nn
 
 import mnist_data
+import sevens
 from model import build, first_layer_filters, n_params
 
 RUNS_DIR = Path(__file__).parent / "runs"
@@ -50,6 +52,8 @@ def parse_args(argv=None) -> argparse.Namespace:
                    help="use only this many training images (0 = all 55,000)")
     p.add_argument("--val-size", type=int, default=5000)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--seven-balance", choices=sevens.BALANCE, default="none",
+                   help="add crossed 7s each epoch until the 7 pool is 50:50 (see sevens.py)")
     p.add_argument("--log-every", type=int, default=20, help="steps between batch logs")
     p.add_argument("--run-dir", type=Path, default=None,
                    help="where to write (default runs/<timestamp>-<arch>)")
@@ -94,10 +98,13 @@ def train(args: argparse.Namespace) -> Path:
     try:
         torch.manual_seed(args.seed)
         d = mnist_data.load()
-        (x_tr, y_tr), (x_va, y_va) = mnist_data.split(
-            d["x_train"], d["y_train"], args.val_size, args.seed)
+        # Split positions rather than images, so tags can follow the images.
+        (i_tr, _), (i_va, _) = mnist_data.split(
+            np.arange(len(d["y_train"])), d["y_train"], args.val_size, args.seed)
         if args.train_size:
-            x_tr, y_tr = x_tr[:args.train_size], y_tr[:args.train_size]
+            i_tr = i_tr[:args.train_size]
+        x_tr, y_tr = d["x_train"][i_tr], d["y_train"][i_tr]
+        x_va, y_va = d["x_train"][i_va], d["y_train"][i_va]
         if len(x_tr) == 0:
             raise ValueError(f"no training images left after a {args.val_size}-image validation set")
 
@@ -108,14 +115,21 @@ def train(args: argparse.Namespace) -> Path:
         x_va, y_va = tensors(x_va, y_va)
         x_te, y_te = tensors(d["x_test"], d["y_test"])
 
+        n_extra, x_crossed = 0, None
+        if args.seven_balance != "none":
+            crossed = sevens.crossed_mask(i_tr, len(d["y_train"])) & (y_tr.numpy() == 7)
+            n_extra = sevens.n_extra(y_tr.numpy(), crossed)
+            x_crossed = x_tr[torch.from_numpy(crossed)]
+
         model = build(args.arch, args.dropout)
         opt = (torch.optim.Adam(model.parameters(), lr=args.lr) if args.optimizer == "adam"
                else torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9))
         loss_fn = nn.CrossEntropyLoss()
-        status.update(n_params=n_params(model), n_train=len(x_tr), n_val=len(x_va))
+        status.update(n_params=n_params(model), n_train=len(x_tr), n_val=len(x_va),
+                      n_extra_crossed7=n_extra)
         write_json(run_dir / "status.json", status)
 
-        steps_per_epoch = (len(x_tr) + args.batch_size - 1) // args.batch_size
+        steps_per_epoch = (len(x_tr) + n_extra + args.batch_size - 1) // args.batch_size
         filters, best_acc, step = [], -1.0, 0
         gen = torch.Generator().manual_seed(args.seed)
 
@@ -128,13 +142,17 @@ def train(args: argparse.Namespace) -> Path:
 
         for epoch in range(1, args.epochs + 1):
             model.train()
-            order = torch.randperm(len(x_tr), generator=gen)
+            x_ep, y_ep = x_tr, y_tr
+            if n_extra:        # fresh extras every epoch
+                x_ep = torch.cat([x_tr, sevens.extras(x_crossed, n_extra, args.seven_balance, gen)])
+                y_ep = torch.cat([y_tr, torch.full((n_extra,), 7)])
+            order = torch.randperm(len(x_ep), generator=gen)
             run_loss = run_correct = run_n = 0
             for b in range(steps_per_epoch):
                 if stop_file.exists():
                     raise KeyboardInterrupt
                 idx = order[b * args.batch_size:(b + 1) * args.batch_size]
-                xb, yb = x_tr[idx], y_tr[idx]
+                xb, yb = x_ep[idx], y_ep[idx]
                 logits = model(xb)
                 loss = loss_fn(logits, yb)
                 opt.zero_grad()

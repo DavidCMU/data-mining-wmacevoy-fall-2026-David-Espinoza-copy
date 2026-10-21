@@ -9,6 +9,8 @@ train.py        train one model, writing everything to runs/<id>/
 app.py          Streamlit: start runs, watch them live, inspect the test set
 runs.py         reads runs/<id>/ for the app (no torch)
 export_onnx.py  best checkpoint → model.onnx, verified against PyTorch
+tags.py         extra labels (crossed_seven) as tags/<name>.csv sidecars
+sevens.py       add crossed 7s to training: none | oversample | augment
 web/            draw a digit; the ONNX model reads it in the browser
 ```
 
@@ -86,6 +88,36 @@ nothing the network has seen.
 
 `web/model.onnx` is git-ignored like the rest of `runs/`: it is built from a
 run, not written by hand.
+
+## A weak spot: crossed 7s
+
+Only about 1 in 8 MNIST sevens is crossed (a bar through the stem), and a
+model trained on all of them misses crossed 7s several times as often as plain
+ones. `tags/crossed_seven.csv` marks which 7s are crossed. The labels were
+reviewed by eye, and a pixel heuristic (`tags.py`) only picked which 7s to
+review. The **7 balance** setting (`--seven-balance`, see `sevens.py`) adds crossed
+7s each epoch until the training 7 pool is half crossed:
+
+| 7 balance | Extra crossed 7s per epoch are... |
+| --- | --- |
+| `none` | not added: the baseline, no bias correction |
+| `oversample` | crossed 7s repeated at random |
+| `augment` | crossed 7s shifted (±2 px), rotated (±10°) and scaled (0.9-1.1×) |
+
+The dashboard's Test tab shows crossed and plain 7 accuracy for the run and a
+table comparing every finished run. Extra 7s make 7 a more common class, so
+watch the **false 7s** (other digits called 7) as well. Mean of 3 seeds
+(cnn, batch 128, 16 epochs):
+
+| 7 balance | test acc | crossed 7s | plain 7s | 7s missed | false 7s |
+| --- | --- | --- | --- | --- | --- |
+| none | 99.22% | 96.7% | 99.4% | 9.3 | 10.7 |
+| oversample | 99.21% | 98.5% | 99.6% | 6.0 | 11.7 |
+| augment | 99.21% | 98.7% | 99.3% | 7.7 | 10.7 |
+
+There are only 130 crossed 7s in the test set, so one image is 0.8 points.
+The dashboard sidebar's **Experiments to try** notes cover this and batch size
+and epochs, with the outcomes of the runs behind these numbers.
 
 ## Things to try
 
