@@ -251,3 +251,8 @@ __marimo__/
 # `pixi run -e ml train` / the dashboard.
 ml/runs/
 ml/web/*.onnx
+
+# --- source -------------------------------------------------------------
+# Other repositories checked out beside the projects for reference (e.g.
+# occupancy-backend). Each is its own git repo; never commit them here.
+source/

@@ -37,5 +37,6 @@ select = [
 
 [lint.isort]
 # Treat the project modules as first-party so they sort into their own block.
-known-first-party = ["usgs", "eda", "px", "meta", "app", "export_onnx",
+known-first-party = ["usgs", "eda", "px", "meta", "app", "export_onnx", "chunks", "models",
+                     "store", "index", "ask", "compare",
                      "mnist_data", "model", "runs", "sevens", "tags", "train"]

@@ -119,6 +119,27 @@ lint = { cmd = "ruff check .", cwd = "ml" }
 clean = { cmd = "python -c \"import shutil; [shutil.rmtree(p, ignore_errors=True) for p in ('data', 'runs')]; print('cleared data/ and runs/')\"", cwd = "ml" }
 
 # -----------------------------------------------------------------------------
+# Project: llm
+#
+# Retrieval for RAG over the software-engineering guide: chunk its Markdown by
+# heading, embed the chunks with a small local model, store them in LanceDB
+# (an embedded database: a folder on disk, no server), and search by vector,
+# keyword, or both. Run with `pixi run -e llm <task>`.
+# -----------------------------------------------------------------------------
+[feature.llm.dependencies]
+lancedb = ">=0.25"                 # native full-text search, no tantivy needed
+sentence-transformers = ">=5"      # downloads and runs the embedding models
+pytorch = ">=2.3"
+
+[feature.llm.tasks]
+index = { cmd = "python index.py", cwd = "llm" }
+ask = { cmd = "python ask.py", cwd = "llm" }
+compare = { cmd = "python compare.py", cwd = "llm" }
+test = { cmd = "pytest -q", cwd = "llm" }
+lint = { cmd = "ruff check .", cwd = "llm" }
+clean = { cmd = "python -c \"import shutil; shutil.rmtree('data', ignore_errors=True); print('cleared data/')\"", cwd = "llm" }
+
+# -----------------------------------------------------------------------------
 # Environments. `default` is what `pixi install` and a bare `pixi run` use.
 #
 # When the second project lands, add a sibling line, e.g.
@@ -130,3 +151,4 @@ default = ["colorado-river", "dev"]
 colorado-river = ["colorado-river", "dev"]
 occupancy = ["occupancy", "dev"]
 ml = ["ml", "dev"]
+llm = ["llm", "dev"]

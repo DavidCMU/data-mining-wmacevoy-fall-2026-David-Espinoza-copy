@@ -1,0 +1,40 @@
+{"kind": "paraphrase", "q": "Why should I watch a new test fail before I trust it?", "expect": ["guide/06-testing.md#t3"]}
+{"kind": "paraphrase", "q": "How do I deal with a bug that only shows up sometimes and I cannot make it happen?", "expect": ["guide/06-testing.md#t9"]}
+{"kind": "paraphrase", "q": "Should my fake database and the real one be checked by the same tests?", "expect": ["guide/06-testing.md#t6"]}
+{"kind": "paraphrase", "q": "How can I test a GUI without clicking through it?", "expect": ["guide/06-testing.md#t7"]}
+{"kind": "paraphrase", "q": "Let the computer come up with test inputs I would never think of", "expect": ["guide/06-testing.md#t10"]}
+{"kind": "paraphrase", "q": "What should happen if the same request gets processed twice by accident?", "expect": ["guide/05-design.md#d4"]}
+{"kind": "paraphrase", "q": "Can I use the system clock to measure how long something took?", "expect": ["guide/05-design.md#d5"]}
+{"kind": "paraphrase", "q": "Is a saved copy of data that might be stale really a cache?", "expect": ["guide/05-design.md#d2"]}
+{"kind": "paraphrase", "q": "Should I pin my dependency versions, and do I check the lock file into git?", "expect": ["guide/07-operating.md#o2"]}
+{"kind": "paraphrase", "q": "Production is down. What do I do first?", "expect": ["guide/07-operating.md#o9"]}
+{"kind": "paraphrase", "q": "A network call keeps failing. How many times should I retry, and how long should I wait?", "expect": ["guide/07-operating.md#o5"]}
+{"kind": "paraphrase", "q": "How do I rename a database column without breaking the old version of the app?", "expect": ["guide/07-operating.md#o7"]}
+{"kind": "paraphrase", "q": "Should I make the code faster before profiling it?", "expect": ["guide/07-operating.md#o10"]}
+{"kind": "paraphrase", "q": "In what ways can data coming into my system go wrong?", "expect": ["guide/04-requirements.md#r6"]}
+{"kind": "paraphrase", "q": "The client changed their mind. Do I just edit the requirements document?", "expect": ["guide/04-requirements.md#r10"]}
+{"kind": "paraphrase", "q": "Where do I record the features we chose not to build?", "expect": ["guide/04-requirements.md#r9"]}
+{"kind": "paraphrase", "q": "Is a vague requirement safer than a precise one that might turn out wrong?", "expect": ["guide/04-requirements.md#r2"]}
+{"kind": "paraphrase", "q": "When is a waterfall process actually the right choice?", "expect": ["guide/08-work.md#w2"]}
+{"kind": "paraphrase", "q": "What should I build first on a brand new project?", "expect": ["guide/08-work.md#w6"]}
+{"kind": "paraphrase", "q": "What has to be true before a change counts as finished?", "expect": ["guide/08-work.md#w11"]}
+{"kind": "paraphrase", "q": "I joined a project that already has a lot of code. How do I catch up?", "expect": ["guide/08-work.md#w12"]}
+{"kind": "paraphrase", "q": "Why does everyone panic and cut corners in the last week before a deadline?", "expect": ["guide/08-work.md#w7"]}
+{"kind": "paraphrase", "q": "How soon should I tell the client we are going to be late?", "expect": ["guide/09-people.md#h9"]}
+{"kind": "paraphrase", "q": "What should I ask in my first meeting with a new client?", "expect": ["guide/09-people.md#h7"]}
+{"kind": "paraphrase", "q": "What if a team member is out sick or goes quiet in the middle of the project?", "expect": ["guide/09-people.md#h2"]}
+{"kind": "paraphrase", "q": "Something went wrong and the client feels bad about it. Who do we blame?", "expect": ["guide/09-people.md#h12"]}
+{"kind": "paraphrase", "q": "The AI assistant sounds very sure its code works. Can I believe it?", "expect": ["guide/10-agents.md#a2"]}
+{"kind": "paraphrase", "q": "My coding assistant forgets what I told it yesterday", "expect": ["guide/10-agents.md#a3", "guide/10-agents.md#a4"]}
+{"kind": "paraphrase", "q": "When should an AI agent stop and check with a person instead of continuing?", "expect": ["AGENTS.md#stop-ask-or-proceed"]}
+{"kind": "paraphrase", "q": "Once you reward people for hitting a metric, the metric gets gamed", "expect": ["guide/03-feedback.md#f5"]}
+{"kind": "keyword", "q": "What is an unknown unknown?", "expect": ["guide/02-unknowing.md#u1", "GLOSSARY.md"]}
+{"kind": "keyword", "q": "bus factor", "expect": ["GLOSSARY.md", "guide/09-people.md#h1"]}
+{"kind": "keyword", "q": "K3 factory", "expect": ["guide/02-unknowing.md#u7", "GLOSSARY.md"]}
+{"kind": "keyword", "q": "avoidance gradient", "expect": ["guide/08-work.md#w7"]}
+{"kind": "keyword", "q": "idempotent", "expect": ["guide/05-design.md#d4"]}
+{"kind": "keyword", "q": "absent, late, wrong, and lying", "expect": ["guide/04-requirements.md#r6"]}
+{"kind": "id", "q": "SE1/O8", "expect": ["guide/07-operating.md#o8"]}
+{"kind": "id", "q": "What does D10 say?", "expect": ["guide/05-design.md#d10"]}
+{"kind": "id", "q": "Explain SE1/W9", "expect": ["guide/08-work.md#w9"]}
+{"kind": "id", "q": "How do U3 and A2 relate?", "expect": ["guide/02-unknowing.md#u3", "guide/10-agents.md#a2"]}
