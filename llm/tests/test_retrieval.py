@@ -3,7 +3,7 @@ Offline tests: no model downloads. Vectors are made by hand, so these check
 the chunking, the LanceDB plumbing and the scoring, not any model's quality.
 That is compare.py's job.
 """
-import os
+import re
 from pathlib import Path
 
 import numpy as np
@@ -126,11 +126,16 @@ def test_rank_counts_sections_not_chunks():
 
 def test_every_expected_answer_exists_in_the_guide():
     """A typo in questions.jsonl would quietly count as a miss for every model."""
-    root = next((Path(p).expanduser() for p in (os.environ.get("SE_GUIDE"),
-                 "~/projects/software-engineering", chunks.DATA_DIR / "software-engineering")
-                 if p and Path(p).expanduser().is_dir()), None)
-    if root is None:
-        pytest.skip("guide not checked out; run `pixi run -e llm index` once")
-    refs = {c.ref for c in chunks.chunk_guide(root)}
+    refs = {c.ref for c in chunks.chunk_guide(chunks.find_guide())}
     missing = [e for q in compare.load_questions() for e in q["expect"] if e not in refs]
     assert not missing
+
+
+def test_zen_summary_covers_every_principle_in_the_vendored_guide():
+    """zen/guide-summary.md is condensed by hand from the guide. When `vendor` brings in a
+    guide that adds, drops or renumbers a principle, this fails until the summary is redone."""
+    guide = {c.principle.split("/")[1] for c in chunks.chunk_guide(chunks.find_guide())
+             if c.principle}
+    summary = Path(__file__).parent.parent / "zen" / "guide-summary.md"
+    listed = set(re.findall(r"^- ([A-Z]\d+)\. ", summary.read_text(), re.MULTILINE))
+    assert listed == guide

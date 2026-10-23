@@ -101,13 +101,15 @@ def main(argv=None):
     args = p.parse_args(argv)
 
     questions = load_questions()
-    chunk_list = chunks.chunk_guide(chunks.find_guide(args.corpus), args.max_chars)
+    root = chunks.find_guide(args.corpus)
+    chunk_list = chunks.chunk_guide(root, args.max_chars)
     print(f"{len(questions)} questions, {len(chunk_list)} chunks (max {args.max_chars} chars)\n")
 
     db = store.connect()
     rows, details = [], []
     for key in args.models:
-        timing = index.index_model(db, key, chunk_list)
+        timing = index.index_model(db, key, chunk_list, args.max_chars,
+                                   index.guide_version(root))
         table = store.open_table(db, store.table_name(key))
         print(f"indexed {key}: {timing['embed_s']:.1f}s, {timing['truncated']} truncated")
         for mode in args.modes:
@@ -130,11 +132,17 @@ def main(argv=None):
                 where = f"rank {r['rank']}" if r["rank"] else f"not in top {DEPTH}"
                 print(f"{label:14s} {mode:7s} {where:15s} [{r['kind']}] {r['q']}")
 
-    RESULTS.parent.mkdir(parents=True, exist_ok=True)
-    df.assign(when=datetime.now().isoformat(timespec="seconds"), max_chars=args.max_chars,
-              chunks=len(chunk_list), pin=args.pin, questions=len(questions)).to_csv(
-        RESULTS, mode="a", header=not RESULTS.exists(), index=False)
+    append_results(df, args.max_chars, len(chunk_list), args.pin, len(questions))
     print(f"\nappended to {RESULTS}")
+
+
+def append_results(df: pd.DataFrame, max_chars: int, n_chunks: int, pin: bool,
+                   n_questions: int) -> None:
+    """Add summary rows to data/compare.csv, stamped with the settings that produced them."""
+    RESULTS.parent.mkdir(parents=True, exist_ok=True)
+    df.assign(when=datetime.now().isoformat(timespec="seconds"), max_chars=max_chars,
+              chunks=n_chunks, pin=pin, questions=n_questions).to_csv(
+        RESULTS, mode="a", header=not RESULTS.exists(), index=False)
 
 
 if __name__ == "__main__":

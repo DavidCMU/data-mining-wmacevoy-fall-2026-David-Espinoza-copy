@@ -18,11 +18,11 @@ the right section.
 import argparse
 import os
 import re
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
 GUIDE_REPO = "https://github.com/wmacevoy/software-engineering.git"
+GUIDE_DIR = Path(__file__).parent / "vendor" / "software-engineering"   # see vendor.py
 DATA_DIR = Path(__file__).parent / "data"
 MAX_CHARS = 1500        # ~350 tokens: under every candidate model's limit but MiniLM's
 PRINCIPLE_VERSION = "SE1"   # the guide cites principles as SE1/T3 (see its llms.txt)
@@ -57,17 +57,12 @@ def principles_in(text: str) -> list[str]:
 
 
 def find_guide(path: str | None = None) -> Path:
-    """The guide's checkout: --corpus, else $SE_GUIDE, else ~/projects/software-engineering,
-    else a shallow clone into data/software-engineering."""
-    for candidate in (path, os.environ.get("SE_GUIDE"), "~/projects/software-engineering"):
+    """The guide: --corpus, else $SE_GUIDE (a working checkout, for editing the guide and
+    the lab together), else the vendored copy in vendor/software-engineering."""
+    for candidate in (path, os.environ.get("SE_GUIDE"), GUIDE_DIR):
         if candidate and (p := Path(candidate).expanduser()).is_dir():
             return p
-    clone = DATA_DIR / "software-engineering"
-    if not clone.is_dir():
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        print(f"cloning {GUIDE_REPO} into {clone}")
-        subprocess.run(["git", "clone", "--depth", "1", GUIDE_REPO, str(clone)], check=True)
-    return clone
+    raise SystemExit(f"no guide at {GUIDE_DIR}; run `pixi run -e llm vendor` to fetch it")
 
 
 def guide_files(root: Path) -> list[Path]:

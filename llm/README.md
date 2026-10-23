@@ -1,10 +1,18 @@
-# Retrieval for RAG over the Software Engineering Guide
+# A RAG Lab over the Software Engineering Guide
 
 Turn [wmacevoy/software-engineering](https://github.com/wmacevoy/software-engineering)
-into a searchable database, then measure which small local embedding model
-finds the right section most often.
+into a searchable database, then build a mentor bot on top of it, and tune both
+by measurement. The lab has two phases:
+
+1. **Retrieval** (local, free): which embedding model, search mode and chunk
+   size find the right section most often?
+2. **Conversation** (Claude API): Zen Coder, a mentor for novice developers,
+   knows the guide. Which system prompt, and how many retrieved sections per
+   turn, make it a better mentor, as scored by a judge model?
 
 ```
+app.py            Streamlit dashboard: both phases, and a chat with Zen Coder
+vendor.py         copy the guide into vendor/ (see below)
 chunks.py         Markdown → one chunk per heading (split further only if long)
 models.py         the candidate embedding models, and their query/passage prefixes
 store.py          LanceDB: one table per model; vector, keyword (fts), or hybrid search
@@ -12,12 +20,40 @@ index.py          chunk → embed → write data/lancedb/chunks_<model>
 ask.py            search, or print the prompt a RAG system would send an LLM
 compare.py        score every model × search mode on questions.jsonl
 questions.jsonl   40 questions with the sections that answer them
+zen/              phase 2: Zen Coder, its test conversations, and the judge (zen/README.md)
 ```
 
 **RAG** (retrieval-augmented generation) means: before asking an LLM a
 question, look up the passages that answer it and paste them into the prompt.
-This project is the retrieval half. `ask.py --prompt` prints the finished
-prompt, so you can paste it into any chat model and watch the whole loop.
+Phase 1 is the retrieval half. `ask.py --prompt` prints the finished prompt,
+so you can paste it into any chat model and watch the whole loop. Phase 2 is
+the generation half, measured.
+
+## The dashboard
+
+```bash
+pixi run -e llm app          # opens http://localhost:8501
+```
+
+| Page | What you do there |
+| --- | --- |
+| **1 · Retrieval** | Build an index per model and chunk size; search three ways side by side; score a setup on the test set and see every miss; compare scores over time; edit the test set |
+| **2 · Conversation** | Start a run of test conversations (prompts × k × scenarios × repeats); watch it live; read transcripts with what Zen retrieved each turn; compare scores by prompt and k, and across runs; edit prompts and scenarios |
+| **Chat with Zen Coder** | Talk to it yourself, see what it retrieved, and have the judge score your conversation |
+
+Phase 2 and Chat call the Claude API, which needs a key from
+[console.anthropic.com](https://console.anthropic.com). Put it in `llm/.env`,
+which git ignores:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+or export it before starting the app. A conversation costs about $0.15 with
+the default models (Sonnet for Zen Coder, Haiku for the novice, Opus for the
+judge), so a 12-conversation run is about $2. The dashboard shows an estimate
+before you start and the running bill after; the prices it uses are in
+`zen/coder.py`.
 
 ## Running it
 
@@ -31,14 +67,23 @@ pixi run -e llm ask "how do I handle a flaky bug I cannot reproduce"
 | Task | What it does |
 | --- | --- |
 | `pixi run -e llm index` | Build the table for the default model (`--model all` for every model) |
+| `pixi run -e llm app` | Launch the dashboard |
 | `pixi run -e llm ask "<question>"` | Top 5 sections (`--mode fts\|hybrid`, `--model`, `-k`, `--prompt`) |
 | `pixi run -e llm compare` | Index every model and score it on `questions.jsonl` |
 | `pixi run -e llm test` | Run the tests (offline, about a second) |
 | `pixi run -e llm lint` | Check code style |
-| `pixi run -e llm clean` | Delete `data/` (the database, results, and any cloned guide) |
+| `pixi run -e llm zen-run --run <name>` | A phase 2 run from the command line (`--help`) |
+| `pixi run -e llm zen-score <name>` | Summarize a phase 2 run |
+| `pixi run -e llm vendor` | Update the vendored guide to upstream `main` (`--ref v1.1` to pin a tag, `--check` to compare only) |
+| `pixi run -e llm clean` | Delete `data/` (the database and results) |
 
-The guide is read from `$SE_GUIDE`, else `~/projects/software-engineering`,
-else it is cloned into `data/software-engineering`. Models are cached in
+The guide is **vendored**: a copy lives in `vendor/software-engineering/`, and
+`vendor/software-engineering.json` records the commit it came from. A fresh
+clone indexes the same text every time, with no network and no second
+checkout. Updating is a deliberate step: `pixi run -e llm vendor` prints which
+files changed; re-index, run the tests (one checks that `zen/guide-summary.md`
+still lists every principle), and commit. To work against a live checkout
+instead, set `$SE_GUIDE` or pass `--corpus`. Models are cached in
 `~/.cache/huggingface`, so after the first download everything runs offline.
 
 > Pixi's task runner can't parse an apostrophe inside a quoted argument
