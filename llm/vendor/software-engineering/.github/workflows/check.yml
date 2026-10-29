@@ -1,0 +1,18 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # the check compares principles with the last release tag
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      # The same command a contributor runs locally (O3); no dependencies to install.
+      - run: node tools/check.js

@@ -1,0 +1,4 @@
+# The API key lives here; never commit it.
+.streamlit/secrets.toml
+# The Parquet cache (also covered by */data/ in ../.gitignore).
+data/

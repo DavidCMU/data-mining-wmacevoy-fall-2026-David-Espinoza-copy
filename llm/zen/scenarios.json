@@ -1,0 +1,74 @@
+{
+  "alarm": {
+    "opening": "I want to make a alarm clock for my classes that is not distracting.",
+    "persona": "A first-year college student who took one intro Python course.",
+    "facts": [
+      "Wants it to run on a MacBook, not a phone.",
+      "Has written small Python scripts but never an app.",
+      "\"Not distracting\" means one quiet notification five minutes before class, nothing else.",
+      "Classes differ by day: Monday/Wednesday/Friday at 9:00, Tuesday/Thursday at 11:00.",
+      "Wants it working by next week."
+    ],
+    "relevant": [
+      "guide/08-work.md#w6",
+      "guide/05-design.md#d5",
+      "guide/06-testing.md#t7",
+      "guide/04-requirements.md#r5",
+      "guide/04-requirements.md#r1"
+    ]
+  },
+  "club": {
+    "opening": "My club needs a website where members can sign up for events.",
+    "persona": "A sophomore who is club treasurer and has built a static HTML page once.",
+    "facts": [
+      "About 40 members; events have a capacity limit.",
+      "The club has no budget.",
+      "Sign-ups would collect names and student emails.",
+      "Club officers change every year, and someone else will have to run it.",
+      "Has never deployed anything to the internet."
+    ],
+    "relevant": [
+      "guide/07-operating.md#o8",
+      "guide/04-requirements.md#r8",
+      "guide/07-operating.md#if-you-have-never-deployed-anything",
+      "guide/05-design.md#d12",
+      "guide/02-unknowing.md#u6",
+      "guide/08-work.md#w6"
+    ]
+  },
+  "grades": {
+    "opening": "I had an AI write me an app that tracks my grades but now it is broken and I do not know why.",
+    "persona": "A non-CS major who has been using an AI assistant to write all of the code.",
+    "facts": [
+      "It is a Python script of about 300 lines that they did not write themselves.",
+      "It broke after they asked the AI to \"add weighted categories.\"",
+      "There are no tests; they check it by running it and looking at the numbers.",
+      "They do not use git."
+    ],
+    "relevant": [
+      "guide/10-agents.md#a2",
+      "guide/10-agents.md#a1",
+      "guide/06-testing.md#t3",
+      "guide/10-agents.md#a7",
+      "guide/06-testing.md#t1",
+      "guide/06-testing.md#t9"
+    ]
+  },
+  "plant": {
+    "opening": "I want my Raspberry Pi to text me when my plant needs water.",
+    "persona": "A hobbyist who has followed a few Raspberry Pi tutorials.",
+    "facts": [
+      "Already has a soil-moisture sensor wired up and can print readings.",
+      "The readings sometimes jump to nonsense values for a moment.",
+      "The Wi-Fi in the apartment drops out at night.",
+      "Would be upset to get ten texts in a row, or none when the plant is dying."
+    ],
+    "relevant": [
+      "guide/04-requirements.md#r6",
+      "guide/07-operating.md#o4",
+      "guide/07-operating.md#o5",
+      "guide/03-feedback.md#f4",
+      "guide/08-work.md#w6"
+    ]
+  }
+}

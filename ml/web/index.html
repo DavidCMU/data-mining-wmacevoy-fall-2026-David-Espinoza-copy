@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digit Reader</title>
+<!--
+  Draw a digit; an ONNX model exported from ../export_onnx.py reads it, entirely
+  in the browser (onnxruntime-web, WebAssembly). Nothing is sent anywhere.
+
+  The network was trained on MNIST, so the drawing is prepared the way MNIST
+  digits were: crop to the ink, scale the longer side to 20 px, then place it
+  in a 28x28 frame with its center of mass at the center. Skip that and a
+  perfectly good "7" drawn in a corner reads as noise.
+
+  Serve this folder (fetch() can't read file:// URLs):  pixi run -e ml web
+-->
+<style>
+  :root {
+    color-scheme: light;
+    --surface-0: #f3f2ee;
+    --surface-1: #fcfcfb;
+    --border: #dcdad3;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #77756f;
+    --paper: #ffffff;
+    --ink: #0b0b0b;
+    --bar: #2a78d6;
+    --bar-track: #e9e8e3;
+    --critical: #c4342f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-0: #121211;
+      --surface-1: #1a1a19;
+      --border: #34332f;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted: #94938b;
+      --paper: #0b0b0b;
+      --ink: #f0efec;
+      --bar: #3987e5;
+      --bar-track: #2a2a28;
+      --critical: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-0: #121211;
+    --surface-1: #1a1a19;
+    --border: #34332f;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #94938b;
+    --paper: #0b0b0b;
+    --ink: #f0efec;
+    --bar: #3987e5;
+    --bar-track: #2a2a28;
+    --critical: #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--surface-0);
+    color: var(--text-primary);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 920px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .lede { color: var(--text-secondary); margin: 0 0 24px; }
+
+  .grid { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 24px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .label {
+    font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-muted); margin: 0 0 8px;
+  }
+
+  #pad {
+    display: block; width: 100%; aspect-ratio: 1; touch-action: none; cursor: crosshair;
+    background: var(--paper); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+  button, .file {
+    font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface-0); color: var(--text-primary);
+  }
+  button:hover, .file:hover { border-color: var(--text-muted); }
+  .file input { display: none; }
+
+  .answer { display: flex; align-items: baseline; gap: 16px; min-height: 96px; }
+  #digit { font-size: 88px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  #confidence { color: var(--text-secondary); }
+
+  .bars { display: grid; gap: 6px; margin-top: 12px; }
+  .bar {
+    display: grid; grid-template-columns: 16px minmax(0, 1fr) 52px; gap: 10px; align-items: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .bar .d { color: var(--text-secondary); font-weight: 600; text-align: right; }
+  .bar .track { height: 14px; background: var(--bar-track); border-radius: 4px; overflow: hidden; }
+  .bar .fill { height: 100%; width: 0; background: var(--bar); border-radius: 0 4px 4px 0;
+               transition: width 120ms ease-out; }
+  .bar .p { color: var(--text-secondary); font-size: 14px; text-align: right; }
+  .bar.top .d, .bar.top .p { color: var(--text-primary); }
+
+  .seen { display: flex; gap: 16px; align-items: center; margin-top: 16px; }
+  #seen {
+    width: 112px; height: 112px; image-rendering: pixelated; flex: none;
+    border: 1px solid var(--border); border-radius: 6px; background: #000;
+  }
+  .seen p { margin: 0; font-size: 14px; color: var(--text-secondary); }
+
+  #status { font-size: 14px; color: var(--text-muted); margin-top: 16px; }
+  #status.error { color: var(--critical); }
+  code { font-size: 0.92em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Digit Reader</h1>
+  <p class="lede">Draw a single digit, 0 to 9. A network trained on MNIST reads it as you draw,
+    right here in your browser.</p>
+
+  <div class="grid">
+    <section class="card">
+      <p class="label">Draw here</p>
+      <canvas id="pad" width="280" height="280" aria-label="Drawing pad"></canvas>
+      <div class="row">
+        <button id="clear" type="button">Clear</button>
+        <label class="file">Load .onnx…<input id="file" type="file" accept=".onnx"></label>
+      </div>
+    </section>
+
+    <section class="card">
+      <p class="label">The network says</p>
+      <div class="answer">
+        <span id="digit" aria-live="polite">–</span>
+        <span id="confidence">Draw something.</span>
+      </div>
+      <div class="bars" id="bars"></div>
+
+      <div class="seen">
+        <canvas id="seen" width="28" height="28" aria-label="28 by 28 network input"></canvas>
+        <p>What the network actually sees: 28×28 pixels, cropped, scaled and centered the way
+          MNIST digits were.</p>
+      </div>
+      <p id="status">Loading model…</p>
+    </section>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.wasm.min.js"></script>
+<script>
+"use strict";
+ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
+ort.env.wasm.numThreads = 1;   // threads need cross-origin isolation, which http.server lacks
+
+const pad = document.getElementById("pad");
+const ctx = pad.getContext("2d", { willReadFrequently: true });
+const seen = document.getElementById("seen");
+const seenCtx = seen.getContext("2d");
+const statusEl = document.getElementById("status");
+const digitEl = document.getElementById("digit");
+const confEl = document.getElementById("confidence");
+
+let session = null;
+
+// ---------- probability bars ----------
+const barsEl = document.getElementById("bars");
+const bars = [];
+for (let d = 0; d < 10; d++) {
+  const row = document.createElement("div");
+  row.className = "bar";
+  row.innerHTML = `<span class="d">${d}</span><span class="track"><span class="fill"></span></span>` +
+                  `<span class="p">–</span>`;
+  barsEl.appendChild(row);
+  bars.push({ row, fill: row.querySelector(".fill"), p: row.querySelector(".p") });
+}
+
+// A softmax output is never exactly 0 or 1, so don't print it as if it were.
+function pct(p) {
+  if (p >= 0.9995) return ">99.9%";
+  if (p > 0 && p < 0.0005) return "<0.1%";
+  return `${(p * 100).toFixed(1)}%`;
+}
+
+function showProbs(probs) {
+  if (!probs) {
+    digitEl.textContent = "–";
+    confEl.textContent = "Draw something.";
+    bars.forEach(b => { b.fill.style.width = "0"; b.p.textContent = "–"; b.row.classList.remove("top"); });
+    return;
+  }
+  let best = 0;
+  for (let d = 1; d < 10; d++) if (probs[d] > probs[best]) best = d;
+  digitEl.textContent = best;
+  const c = probs[best];
+  confEl.textContent = `${pct(c)} sure` +
+                       (c < 0.6 ? " — not very." : "");
+  bars.forEach((b, d) => {
+    b.fill.style.width = `${(probs[d] * 100).toFixed(1)}%`;
+    b.p.textContent = pct(probs[d]);
+    b.row.classList.toggle("top", d === best);
+  });
+}
+
+// ---------- drawing ----------
+// Ink is drawn into the canvas alpha channel; the colour is only for display.
+function inkColor() { return getComputedStyle(document.documentElement).getPropertyValue("--ink"); }
+
+let drawing = false, last = null;
+function point(e) {
+  const r = pad.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * pad.width / r.width, y: (e.clientY - r.top) * pad.height / r.height };
+}
+pad.addEventListener("pointerdown", e => {
+  drawing = true; last = point(e); pad.setPointerCapture(e.pointerId);
+  stroke(last, last);
+});
+pad.addEventListener("pointermove", e => {
+  if (!drawing) return;
+  const p = point(e); stroke(last, p); last = p;
+});
+for (const ev of ["pointerup", "pointercancel"]) pad.addEventListener(ev, () => { drawing = false; schedule(); });
+
+function stroke(a, b) {
+  ctx.strokeStyle = inkColor();
+  ctx.lineWidth = 20;           // ~2 px once a full-height digit is scaled into 28x28
+  ctx.lineCap = ctx.lineJoin = "round";
+  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  schedule();
+}
+
+document.getElementById("clear").addEventListener("click", () => {
+  ctx.clearRect(0, 0, pad.width, pad.height);
+  seenCtx.clearRect(0, 0, 28, 28);
+  showProbs(null);
+});
+
+// ---------- MNIST-style preprocessing ----------
+// Returns Float32Array(784) of ink in [0, 1], or null if nothing is drawn.
+function toMnist() {
+  const W = pad.width, H = pad.height;
+  const a = ctx.getImageData(0, 0, W, H).data;
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (a[(y * W + x) * 4 + 3] > 0) {
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+  }
+  if (x1 < 0) return null;
+  const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+
+  // 1. Longer side -> 20 px (MNIST's digit box), aspect ratio kept.
+  const s = 20 / Math.max(bw, bh);
+  const dw = Math.max(1, Math.round(bw * s)), dh = Math.max(1, Math.round(bh * s));
+  const small = document.createElement("canvas");
+  small.width = small.height = 28;
+  const sc = small.getContext("2d", { willReadFrequently: true });
+  sc.imageSmoothingEnabled = true; sc.imageSmoothingQuality = "high";
+  sc.drawImage(pad, x0, y0, bw, bh, 0, 0, dw, dh);
+
+  // 2. Center of mass of the ink.
+  const sa = sc.getImageData(0, 0, 28, 28).data;
+  let m = 0, mx = 0, my = 0;
+  for (let y = 0; y < dh; y++) for (let x = 0; x < dw; x++) {
+    const v = sa[(y * 28 + x) * 4 + 3];
+    m += v; mx += v * x; my += v * y;
+  }
+  const cx = mx / m, cy = my / m;
+
+  // 3. Shift so the center of mass lands on the frame's center.
+  const out = document.createElement("canvas");
+  out.width = out.height = 28;
+  const oc = out.getContext("2d", { willReadFrequently: true });
+  oc.drawImage(small, Math.round(13.5 - cx), Math.round(13.5 - cy));
+  const oa = oc.getImageData(0, 0, 28, 28).data;
+
+  const pixels = new Float32Array(784);
+  const view = seenCtx.createImageData(28, 28);
+  for (let i = 0; i < 784; i++) {
+    const v = oa[i * 4 + 3];
+    pixels[i] = v / 255;
+    view.data[i * 4] = view.data[i * 4 + 1] = view.data[i * 4 + 2] = v;   // white on black, like MNIST
+    view.data[i * 4 + 3] = 255;
+  }
+  seenCtx.putImageData(view, 0, 0);
+  return pixels;
+}
+
+// ---------- inference ----------
+let pending = false, busy = false;
+function schedule() {
+  if (pending) return;
+  pending = true;
+  requestAnimationFrame(() => { pending = false; predict(); });
+}
+
+async function predict() {
+  if (!session || busy) return;
+  const pixels = toMnist();
+  if (!pixels) { showProbs(null); return; }
+  busy = true;
+  try {
+    const input = new ort.Tensor("float32", pixels, [1, 1, 28, 28]);
+    const out = await session.run({ [session.inputNames[0]]: input });
+    showProbs(out[session.outputNames[0]].data);
+  } catch (err) {
+    setStatus(`Inference failed: ${err.message}`, true);
+  } finally {
+    busy = false;
+  }
+}
+
+// ---------- model loading ----------
+function setStatus(text, isError = false) {
+  statusEl.textContent = text;
+  statusEl.classList.toggle("error", isError);
+}
+
+async function loadModel(source, name) {
+  setStatus(`Loading ${name}…`);
+  try {
+    session = await ort.InferenceSession.create(source, { executionProviders: ["wasm"] });
+    setStatus(`Model: ${name} · input "${session.inputNames[0]}" → output "${session.outputNames[0]}"`);
+    schedule();
+  } catch (err) {
+    session = null;
+    setStatus(`Could not load ${name}: ${err.message}`, true);
+  }
+}
+
+document.getElementById("file").addEventListener("change", async e => {
+  const f = e.target.files[0];
+  if (f) await loadModel(new Uint8Array(await f.arrayBuffer()), f.name);
+});
+
+(async () => {
+  try {
+    const resp = await fetch("model.onnx");
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    await loadModel(new Uint8Array(await resp.arrayBuffer()), "model.onnx");
+  } catch (err) {
+    setStatus("No model.onnx next to this page yet. Export one from the dashboard " +
+              "(Test set → Export), or run `pixi run -e ml export`, or use Load .onnx… above.",
+              true);
+  }
+})();
+</script>
+</body>
+</html>

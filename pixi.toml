@@ -71,6 +71,83 @@ lint = { cmd = "ruff check .", cwd = "colorado_river" }
 clean = { cmd = "python -c \"import shutil,pathlib; [shutil.rmtree(p, ignore_errors=True) for p in (pathlib.Path('data'), pathlib.Path('debug'))]; print('cleared data/ and debug/')\"", cwd = "colorado_river" }
 
 # -----------------------------------------------------------------------------
+# Project: occupancy_explorer
+#
+# A Streamlit explorer over the occupancy GraphQL API (occupancy-backend's
+# source-graphql). The HTTP client is the standard library, so the deltas are
+# just Streamlit and Altair. Run with `pixi run -e occupancy <task>`.
+# -----------------------------------------------------------------------------
+[feature.occupancy.dependencies]
+# >=1.63: streamlit 1.59.1 with pyarrow 25.0.0 segfaults while re-serialising
+# chart data (see primary-residence-mesa-county/pixi.toml).
+streamlit = ">=1.63"
+altair = ">=5.3"
+watchdog = ">=4"
+
+[feature.occupancy.tasks]
+app = { cmd = "streamlit run app.py", cwd = "occupancy_explorer" }
+sync = { cmd = "python occupancy_api.py", cwd = "occupancy_explorer" }
+test = { cmd = "pytest -q", cwd = "occupancy_explorer" }
+lint = { cmd = "ruff check .", cwd = "occupancy_explorer" }
+clean = { cmd = "python -c \"import shutil; shutil.rmtree('data', ignore_errors=True); print('cleared data/')\"", cwd = "occupancy_explorer" }
+
+# -----------------------------------------------------------------------------
+# Project: ml
+#
+# An MNIST pipeline: download -> train a small PyTorch network -> watch it learn
+# in Streamlit. Training runs as its own process and writes runs/<id>/, so the
+# dashboard can be reloaded (or closed) without killing a run.
+# Run with `pixi run -e ml <task>`.
+# -----------------------------------------------------------------------------
+[feature.ml.dependencies]
+pytorch = ">=2.3"
+streamlit = ">=1.63"      # see the pyarrow note under occupancy
+altair = ">=5.3"
+watchdog = ">=4"
+onnx = ">=1.16"           # torch.onnx.export writes this format
+onnxscript = ">=0.2"      # ... and needs this to do it (the dynamo exporter)
+onnxruntime = ">=1.18"    # runs the exported file, to check it matches PyTorch
+
+[feature.ml.tasks]
+app = { cmd = "streamlit run app.py", cwd = "ml" }
+data = { cmd = "python mnist_data.py", cwd = "ml" }
+train = { cmd = "python train.py", cwd = "ml" }
+export = { cmd = "python export_onnx.py", cwd = "ml" }
+web = { cmd = "python -m http.server 8000 --directory web", cwd = "ml" }
+test = { cmd = "pytest -q", cwd = "ml" }
+lint = { cmd = "ruff check .", cwd = "ml" }
+clean = { cmd = "python -c \"import shutil; [shutil.rmtree(p, ignore_errors=True) for p in ('data', 'runs')]; print('cleared data/ and runs/')\"", cwd = "ml" }
+
+# -----------------------------------------------------------------------------
+# Project: llm
+#
+# Retrieval for RAG over the software-engineering guide: chunk its Markdown by
+# heading, embed the chunks with a small local model, store them in LanceDB
+# (an embedded database: a folder on disk, no server), and search by vector,
+# keyword, or both. Run with `pixi run -e llm <task>`.
+# -----------------------------------------------------------------------------
+[feature.llm.dependencies]
+lancedb = ">=0.25"                 # native full-text search, no tantivy needed
+sentence-transformers = ">=5"      # downloads and runs the embedding models
+pytorch = ">=2.3"
+anthropic = ">=2.1"                # the Claude API, for the conversation phase
+streamlit = ">=1.63"               # see the pyarrow note under occupancy
+altair = ">=5.3"
+watchdog = ">=4"
+
+[feature.llm.tasks]
+app = { cmd = "streamlit run app.py", cwd = "llm" }
+index = { cmd = "python index.py", cwd = "llm" }
+ask = { cmd = "python ask.py", cwd = "llm" }
+compare = { cmd = "python compare.py", cwd = "llm" }
+vendor = { cmd = "python vendor.py", cwd = "llm" }
+zen-run = { cmd = "python -m zen.run", cwd = "llm" }
+zen-score = { cmd = "python zen/score.py", cwd = "llm" }
+test = { cmd = "pytest -q", cwd = "llm" }
+lint = { cmd = "ruff check .", cwd = "llm" }
+clean = { cmd = "python -c \"import shutil; shutil.rmtree('data', ignore_errors=True); print('cleared data/')\"", cwd = "llm" }
+
+# -----------------------------------------------------------------------------
 # Environments. `default` is what `pixi install` and a bare `pixi run` use.
 #
 # When the second project lands, add a sibling line, e.g.
@@ -80,3 +157,6 @@ clean = { cmd = "python -c \"import shutil,pathlib; [shutil.rmtree(p, ignore_err
 [environments]
 default = ["colorado-river", "dev"]
 colorado-river = ["colorado-river", "dev"]
+occupancy = ["occupancy", "dev"]
+ml = ["ml", "dev"]
+llm = ["llm", "dev"]
