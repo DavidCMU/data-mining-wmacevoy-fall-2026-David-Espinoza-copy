@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 BOOK_REPO = "https://github.com/rust-lang/book.git"
-BOOK_DIR = Path(__file__).parent / "vendor" / "rustbook" / "scr"   # see vendor.py
+BOOK_DIR = Path(__file__).parent / "vendor" / "rust-book" / "src"   # see vendor.py
 DATA_DIR = Path(__file__).parent / "data"
 MAX_CHARS = 1500        # ~350 tokens: under every candidate model's limit but MiniLM's
 SKIP_FILES = {"SUMMARY.md"}     # pure table-of-contents, no prose to retrieve
@@ -57,7 +57,7 @@ class Chunk:
 
 def find_book(path: str | None = None) -> Path:
     """The book: --corpus, else $RUST_BOOK (a working checkout, for editing the book and
-    the lab together), else the vendored copy in vendor/rustbook/scr."""
+    the lab together), else the vendored copy in vendor/rust-book/src."""
     for candidate in (path, os.environ.get("RUST_BOOK"), BOOK_DIR):
         if candidate and (p := Path(candidate).expanduser()).is_dir():
             return p
