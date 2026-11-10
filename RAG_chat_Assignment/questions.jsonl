@@ -1,0 +1,45 @@
+{"kind": "paraphrase", "q": "If I assign one variable to another, does the original still own its data afterward?", "expect": ["ch04-01-what-is-ownership.md#variables-and-data-interacting-with-move"]}
+{"kind": "paraphrase", "q": "How do I make a real, independent copy of heap data instead of just moving it?", "expect": ["ch04-01-what-is-ownership.md#variables-and-data-interacting-with-clone"]}
+{"kind": "paraphrase", "q": "Why do simple types like integers not get moved the way a String does?", "expect": ["ch04-01-what-is-ownership.md#stack-only-data-copy"]}
+{"kind": "keyword", "q": "ownership rules", "expect": ["ch04-01-what-is-ownership.md#ownership-rules"]}
+{"kind": "paraphrase", "q": "Can I let a function borrow my value without giving it up for good?", "expect": ["ch04-02-references-and-borrowing.md#references-and-borrowing"]}
+{"kind": "paraphrase", "q": "How many mutable references to the same value can exist at once?", "expect": ["ch04-02-references-and-borrowing.md#mutable-references"]}
+{"kind": "keyword", "q": "dangling references", "expect": ["ch04-02-references-and-borrowing.md#dangling-references", "ch10-03-lifetime-syntax.md#dangling-references"]}
+{"kind": "paraphrase", "q": "How do I refer to part of a string without copying it?", "expect": ["ch04-03-slices.md#string-slices"]}
+{"kind": "paraphrase", "q": "How do I grow a list of values and read them back out one at a time?", "expect": ["ch08-01-vectors.md#storing-lists-of-values-with-vectors"]}
+{"kind": "paraphrase", "q": "I want a vector where different elements can hold different, but related, types. How?", "expect": ["ch08-01-vectors.md#using-an-enum-to-store-multiple-types"]}
+{"kind": "paraphrase", "q": "Why can't I just index into a String with a byte offset the way I would a vector?", "expect": ["ch08-02-strings.md#indexing-into-strings"]}
+{"kind": "keyword", "q": "appending with push_str or push", "expect": ["ch08-02-strings.md#appending-with-push_str-or-push"]}
+{"kind": "paraphrase", "q": "How do key-value pairs get stored so I can look values up by key quickly?", "expect": ["ch08-03-hash-maps.md#storing-keys-with-associated-values-in-hash-maps"]}
+{"kind": "paraphrase", "q": "I only want to insert a value into a map if that key is missing. How?", "expect": ["ch08-03-hash-maps.md#adding-a-key-and-value-only-if-a-key-isnt-present"]}
+{"kind": "paraphrase", "q": "What happens to my program when something goes so wrong it can't continue?", "expect": ["ch09-01-unrecoverable-errors-with-panic.md#unrecoverable-errors-with-panic"]}
+{"kind": "paraphrase", "q": "What's a shorthand for returning early out of a function the moment an operation fails?", "expect": ["ch09-02-recoverable-errors-with-result.md#the--operator-shortcut"]}
+{"kind": "keyword", "q": "when should I panic versus return a Result", "expect": ["ch09-03-to-panic-or-not-to-panic.md#guidelines-for-error-handling"]}
+{"kind": "paraphrase", "q": "How do I write one function that works on several different concrete types?", "expect": ["ch10-01-syntax.md#in-function-definitions"]}
+{"kind": "paraphrase", "q": "How can a function require that its generic type behaves in a certain way?", "expect": ["ch10-02-traits.md#using-traits-as-parameters"]}
+{"kind": "paraphrase", "q": "Can a trait provide a method body so implementers don't all have to write their own?", "expect": ["ch10-02-traits.md#using-default-implementations"]}
+{"kind": "keyword", "q": "the borrow checker", "expect": ["ch10-03-lifetime-syntax.md#the-borrow-checker"]}
+{"kind": "paraphrase", "q": "Why don't I have to annotate lifetimes on most function signatures?", "expect": ["ch10-03-lifetime-syntax.md#lifetime-elision"]}
+{"kind": "keyword", "q": "the static lifetime", "expect": ["ch10-03-lifetime-syntax.md#the-static-lifetime"]}
+{"kind": "paraphrase", "q": "How do I check that calling a function with bad input actually panics?", "expect": ["ch11-01-writing-tests.md#checking-for-panics-with-should_panic"]}
+{"kind": "paraphrase", "q": "How do I only run the tests whose names contain a certain word?", "expect": ["ch11-02-running-tests.md#filtering-to-run-multiple-tests"]}
+{"kind": "paraphrase", "q": "Where do unit tests usually live relative to the code they test?", "expect": ["ch11-03-test-organization.md#unit-tests"]}
+{"kind": "keyword", "q": "the tests directory for integration tests", "expect": ["ch11-03-test-organization.md#the-_tests_-directory"]}
+{"kind": "paraphrase", "q": "What lets an anonymous function remember variables from the scope it was created in?", "expect": ["ch13-01-closures.md#capturing-the-environment"]}
+{"kind": "paraphrase", "q": "What single method does every iterator have to implement?", "expect": ["ch13-02-iterators.md#the-iterator-trait-and-the-next-method"]}
+{"kind": "keyword", "q": "methods that produce other iterators", "expect": ["ch13-02-iterators.md#methods-that-produce-other-iterators"]}
+{"kind": "paraphrase", "q": "Is a for loop over a vector slower than calling iterator methods on it?", "expect": ["ch13-04-performance.md#performance-in-loops-vs-iterators"]}
+{"kind": "paraphrase", "q": "How do I put a value on the heap instead of the stack?", "expect": ["ch15-01-box.md#storing-data-on-the-heap"]}
+{"kind": "paraphrase", "q": "How can a type like a linked list refer to itself without an infinite size?", "expect": ["ch15-01-box.md#enabling-recursive-types-with-boxes"]}
+{"kind": "paraphrase", "q": "How do I make my own type act like a reference when dereferenced with *?", "expect": ["ch15-02-deref.md#implementing-the-deref-trait"]}
+{"kind": "keyword", "q": "the Drop trait for cleanup", "expect": ["ch15-03-drop.md#running-code-on-cleanup-with-the-drop-trait"]}
+{"kind": "paraphrase", "q": "How can several owners share the same heap data at once?", "expect": ["ch15-04-rc.md#rct-the-reference-counted-smart-pointer"]}
+{"kind": "paraphrase", "q": "How do I mutate data even though I only hold an immutable reference to it?", "expect": ["ch15-05-interior-mutability.md#refcellt-and-the-interior-mutability-pattern"]}
+{"kind": "paraphrase", "q": "Two Rc values pointing at each other forever without being freed — what's that called and how do I avoid it?", "expect": ["ch15-06-reference-cycles.md#reference-cycles-can-leak-memory"]}
+{"kind": "paraphrase", "q": "How do I start a new thread and have another part of my program keep running at the same time?", "expect": ["ch16-01-threads.md#creating-a-new-thread-with-spawn"]}
+{"kind": "paraphrase", "q": "How do I send values from one thread to another instead of sharing memory directly?", "expect": ["ch16-02-message-passing.md#transfer-data-between-threads-with-message-passing"]}
+{"kind": "paraphrase", "q": "What lets only one thread at a time access some shared data?", "expect": ["ch16-03-shared-state.md#controlling-access-with-mutexes"]}
+{"kind": "keyword", "q": "atomic reference counting with Arc", "expect": ["ch16-03-shared-state.md#atomic-reference-counting-with-arct"]}
+{"kind": "paraphrase", "q": "Which marker traits tell the compiler a type is safe to move between threads or share across them?", "expect": ["ch16-04-extensible-concurrency-sync-and-send.md#extensible-concurrency-with-send-and-sync"]}
+{"kind": "paraphrase", "q": "How do I store a collection of different concrete types behind one shared interface?", "expect": ["ch18-02-trait-objects.md#using-trait-objects-to-abstract-over-shared-behavior"]}
+{"kind": "paraphrase", "q": "How does Rust pick the right method implementation at runtime for a trait object?", "expect": ["ch18-02-trait-objects.md#performing-dynamic-dispatch"]}
